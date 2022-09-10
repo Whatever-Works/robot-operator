@@ -28,6 +28,7 @@
 #include "driverlib/debug.h"
 #include "driverlib/gpio.h"
 #include "driverlib/sysctl.h"
+#include "driverlib/systick.h"
 
 //*****************************************************************************
 //
@@ -69,6 +70,8 @@ main(void)
 {
     volatile uint32_t ui32Loop;
 
+
+
     //
     // Enable the GPIO port that is used for the on-board LED.
     //
@@ -88,33 +91,8 @@ main(void)
     //
     GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_2);
 
-    //
-    // Loop forever.
-    //
-    while(1)
-    {
-        //
-        // Turn on the LED.
-        //
-        toggleLED();
 
-        //
-        // Delay for a bit.
-        //
-        for(ui32Loop = 0; ui32Loop < 200000; ui32Loop++)
-        {
-        }
-
-        //
-        // Turn off the LED.
-        //
-        toggleLED();
-
-        //
-        // Delay for a bit.
-        //
-        for(ui32Loop = 0; ui32Loop < 200000; ui32Loop++)
-        {
-        }
-    }
+    SysTickEnable();
+    SysTickPeriodSet(ui32Loop);
+    SysTickIntRegister(toggleLED);
 }
