@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>blinky</name>
+	<name>Team7_Milestone1_Pettigrew_Hillary_Robertson</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -24,10 +24,22 @@
 		<nature>org.eclipse.cdt.core.ccnature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>drivers/cfal96x64x16.c</name>
+			<type>1</type>
+			<locationURI>SW_ROOT/examples/boards/dk-tm4c123g/drivers/cfal96x64x16.c</locationURI>
+		</link>
+		<link>
+			<name>utils/uartstdio.c</name>
+			<type>1</type>
+			<locationURI>SW_ROOT/utils/uartstdio.c</locationURI>
+		</link>
+	</linkedResources>
 	<variableList>
 		<variable>
 			<name>ORIGINAL_PROJECT_ROOT</name>
-			<value>file:/C:/ti/TivaWare_C_Series-2.1.4.178/examples/boards/ek-tm4c123gxl/blinky/ccs</value>
+			<value>file:/C:/ti/TivaWare_C_Series-2.1.4.178/examples/boards/dk-tm4c123g/hello/ccs</value>
 		</variable>
 		<variable>
 			<name>SW_ROOT</name>

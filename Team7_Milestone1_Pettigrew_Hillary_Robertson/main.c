@@ -30,6 +30,7 @@
 #include "driverlib/rom.h"
 #include "driverlib/pin_map.h"
 #include "driverlib/uart.h"
+#include "driverlib/systick.h"
 #include "grlib/grlib.h"
 #include "drivers/cfal96x64x16.h"
 #include "utils/uartstdio.h"
@@ -96,6 +97,37 @@ ConfigureUART(void)
     UARTStdioConfig(0, 115200, 16000000);
 }
 
+void
+toggleLED(void) {
+    int32_t value = GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_2);
+    value ^= GPIO_PIN_2;
+    GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, value);
+}
+
+void
+blink_init(void)
+{
+
+    //
+    // Enable the GPIO port that is used for the on-board LED.
+    //
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+    //
+    // Check if the peripheral access is enabled.
+    //
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOF))
+    {
+    }
+    //
+    // Enable the GPIO pin for the LED (PF2).  Set the direction as output, and
+    // enable the GPIO pin for digital function.
+    //
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_2);
+    SysTickIntRegister(toggleLED);
+    SysTickPeriodSet(16777215);
+    SysTickEnable();
+}
+
 //*****************************************************************************
 //
 // Print "Hello World!" to the display.
@@ -104,8 +136,8 @@ ConfigureUART(void)
 int
 main(void)
 {
-    tContext sContext;
-    tRectangle sRect;
+//    tContext sContext;
+//    tRectangle sRect;
 
     //
     // Enable lazy stacking for interrupt handlers.  This allows floating-point
@@ -127,57 +159,5 @@ main(void)
 
     UARTprintf("Hello, world!\n");
 
-    //
-    // Initialize the display driver.
-    //
-    CFAL96x64x16Init();
-
-    //
-    // Initialize the graphics context.
-    //
-    GrContextInit(&sContext, &g_sCFAL96x64x16);
-
-    //
-    // Fill the top 24 rows of the screen with blue to create the banner.
-    //
-    sRect.i16XMin = 0;
-    sRect.i16YMin = 0;
-    sRect.i16XMax = GrContextDpyWidthGet(&sContext) - 1;
-    sRect.i16YMax = 23;
-    GrContextForegroundSet(&sContext, ClrDarkBlue);
-    GrRectFill(&sContext, &sRect);
-
-    //
-    // Put a white box around the banner.
-    //
-    GrContextForegroundSet(&sContext, ClrWhite);
-    GrRectDraw(&sContext, &sRect);
-
-    //
-    // Put the application name in the middle of the banner.
-    //
-    GrContextFontSet(&sContext, g_psFontCm12);
-    GrStringDrawCentered(&sContext, "hello", -1,
-                         GrContextDpyWidthGet(&sContext) / 2, 10, 0);
-
-    //
-    // Say hello using the Computer Modern 40 point font.
-    //
-    GrContextFontSet(&sContext, g_psFontCm12/*g_psFontFixed6x8*/);
-    GrStringDrawCentered(&sContext, "Hello World!", -1,
-                         GrContextDpyWidthGet(&sContext) / 2,
-                         ((GrContextDpyHeightGet(&sContext) - 24) / 2) + 24,
-                         0);
-
-    //
-    // Flush any cached drawing operations.
-    //
-    GrFlush(&sContext);
-
-    //
-    // We are finished. Hang around doing nothing.
-    //
-    while(1)
-    {
-    }
+    blink_init();
 }
