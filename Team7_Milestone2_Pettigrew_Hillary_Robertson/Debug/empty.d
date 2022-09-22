@@ -166,6 +166,7 @@ empty.obj: C:/ti/tirtos_tivac_2_16_00_08/products/bios_6_45_01_29/packages/ti/sy
 empty.obj: C:/ti/tirtos_tivac_2_16_00_08/products/bios_6_45_01_29/packages/ti/sysbios/knl/Task__epilogue.h
 empty.obj: C:/ti/tirtos_tivac_2_16_00_08/products/bios_6_45_01_29/packages/ti/sysbios/knl/package/Task_SupportProxy.h
 empty.obj: C:/ti/tirtos_tivac_2_16_00_08/products/tidrivers_tivac_2_16_00_08/packages/ti/drivers/GPIO.h
+empty.obj: C:/ti/tirtos_tivac_2_16_00_08/products/tidrivers_tivac_2_16_00_08/packages/ti/drivers/UART.h
 empty.obj: ../Board.h
 empty.obj: ../EK_TM4C123GXL.h
 
@@ -500,6 +501,8 @@ C:/ti/tirtos_tivac_2_16_00_08/products/bios_6_45_01_29/packages/ti/sysbios/knl/T
 C:/ti/tirtos_tivac_2_16_00_08/products/bios_6_45_01_29/packages/ti/sysbios/knl/package/Task_SupportProxy.h:
 
 C:/ti/tirtos_tivac_2_16_00_08/products/tidrivers_tivac_2_16_00_08/packages/ti/drivers/GPIO.h:
+
+C:/ti/tirtos_tivac_2_16_00_08/products/tidrivers_tivac_2_16_00_08/packages/ti/drivers/UART.h:
 
 ../Board.h:
 

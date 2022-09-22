@@ -43,6 +43,7 @@
 
 /* TI-RTOS Header files */
 #include <ti/drivers/GPIO.h>
+#include <ti/drivers/UART.h>
 // #include <ti/drivers/I2C.h>
 // #include <ti/drivers/SDSPI.h>
 // #include <ti/drivers/SPI.h>
@@ -53,22 +54,23 @@
 /* Board Header file */
 #include "Board.h"
 
-#define TASKSTACKSIZE   512
+UART_Handle bluetooth_init(void) {
+    UART_Handle uart;
+    UART_Params uartParams;
 
-Task_Struct task0Struct;
-Char task0Stack[TASKSTACKSIZE];
+    UART_Params_init(&uartParams);
+    uartParams.writeDataMode = UART_DATA_TEXT;
+    uartParams.readDataMode = UART_DATA_TEXT;
+    uartParams.readReturnMode = UART_RETURN_FULL;
+    uartParams.readEcho = UART_ECHO_OFF;
+    uartParams.baudRate = 9600;
 
-/*
- *  ======== heartBeatFxn ========
- *  Toggle the Board_LED0. The Task_sleep is determined by arg0 which
- *  is configured for the heartBeat Task instance.
- */
-Void heartBeatFxn(UArg arg0, UArg arg1)
-{
-    while (1) {
-        Task_sleep((UInt)arg0);
-        GPIO_toggle(Board_LED0);
+    uart = UART_open(5, &uartParams);
+
+    if (uart == NULL) {
+       System_abort("Error opening the UART");
     }
+    return uart;
 }
 
 /*
@@ -76,7 +78,6 @@ Void heartBeatFxn(UArg arg0, UArg arg1)
  */
 int main(void)
 {
-    Task_Params taskParams;
 
     /* Call board init functions */
     Board_initGeneral();
@@ -89,23 +90,21 @@ int main(void)
     // Board_initWatchdog();
     // Board_initWiFi();
 
-    /* Construct heartBeat Task  thread */
-    Task_Params_init(&taskParams);
-    taskParams.arg0 = 1000;
-    taskParams.stackSize = TASKSTACKSIZE;
-    taskParams.stack = &task0Stack;
-    Task_construct(&task0Struct, (Task_FuncPtr)heartBeatFxn, &taskParams, NULL);
-
     /* Turn on user LED */
     GPIO_write(Board_LED0, Board_LED_ON);
-
-    System_printf("Starting the example\nSystem provider is set to SysMin. "
-                  "Halt the target to view any SysMin contents in ROV.\n");
-    /* SysMin will only print to the console when you call flush or exit */
-    System_flush();
 
     /* Start BIOS */
     BIOS_start();
 
-    return (0);
+    UART_Handle uart = bluetooth_init();
+    char input;
+
+    while(1) {
+        UART_read(uart, &input, 1);
+        if(input == 'a') {
+            GPIO_write(Board_LED0, Board_LED_ON);
+        } else if (input == 'b') {
+            GPIO_write(Board_LED0, Board_LED_OFF);
+        }
+    }
 }
