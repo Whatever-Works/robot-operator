@@ -1,110 +1,91 @@
-/*
- * Copyright (c) 2015, Texas Instruments Incorporated
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * *  Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * *  Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *
- * *  Neither the name of Texas Instruments Incorporated nor the names of
- *    its contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <inttypes.h>
 
-/*
- *  ======== empty.c ========
- */
-/* XDCtools Header files */
-#include <xdc/std.h>
-#include <xdc/runtime/System.h>
+#include "inc/hw_ints.h"
+#include "inc/hw_types.h"
+#include "inc/hw_memmap.h"
 
-/* BIOS Header files */
-#include <ti/sysbios/BIOS.h>
-#include <ti/sysbios/knl/Task.h>
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"
+#include "driverlib/pin_map.h"
+#include "driverlib/uart.h"
 
-/* TI-RTOS Header files */
-#include <ti/drivers/GPIO.h>
-#include <ti/drivers/UART.h>
-// #include <ti/drivers/I2C.h>
-// #include <ti/drivers/SDSPI.h>
-// #include <ti/drivers/SPI.h>
-// #include <ti/drivers/UART.h>
-// #include <ti/drivers/Watchdog.h>
-// #include <ti/drivers/WiFi.h>
+void bluetoothSendMessage(char *array);
 
-/* Board Header file */
-#include "Board.h"
+/* HC06 BLUETOOTH
+ * TX-->PC6
+ * RX-->PC7*/
 
-UART_Handle bluetooth_init(void) {
-    UART_Handle uart;
-    UART_Params uartParams;
-
-    UART_Params_init(&uartParams);
-    uartParams.writeDataMode = UART_DATA_TEXT;
-    uartParams.readDataMode = UART_DATA_TEXT;
-    uartParams.readReturnMode = UART_RETURN_FULL;
-    uartParams.readEcho = UART_ECHO_OFF;
-    uartParams.baudRate = 9600;
-
-    uart = UART_open(5, &uartParams);
-
-    if (uart == NULL) {
-       System_abort("Error opening the UART");
-    }
-    return uart;
-}
-
-/*
- *  ======== main ========
- */
 int main(void)
 {
+    unsigned char data;
+    int LED = 0;
 
-    /* Call board init functions */
-    Board_initGeneral();
-    Board_initGPIO();
-    // Board_initI2C();
-    // Board_initSDSPI();
-    // Board_initSPI();
-    // Board_initUART();
-    // Board_initUSB(Board_USBDEVICE);
-    // Board_initWatchdog();
-    // Board_initWiFi();
+    SysCtlClockSet(SYSCTL_SYSDIV_4|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);
 
-    /* Turn on user LED */
-    GPIO_write(Board_LED0, Board_LED_ON);
+    //HC06 BLUETOOTH Pinleri
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);
+    GPIOPinConfigure(GPIO_PC6_U3RX);
+    GPIOPinConfigure(GPIO_PC7_U3TX);
+    GPIOPinTypeUART(GPIO_PORTC_BASE,GPIO_PIN_6|GPIO_PIN_7);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_UART3);
+    UARTConfigSetExpClk(UART3_BASE,SysCtlClockGet(),9600,(UART_CONFIG_WLEN_8 | UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_ONE));
+    UARTEnable(UART3_BASE);
 
-    /* Start BIOS */
-    BIOS_start();
 
-    UART_Handle uart = bluetooth_init();
-    char input;
 
-    while(1) {
-        UART_read(uart, &input, 1);
-        if(input == 'a') {
-            GPIO_write(Board_LED0, Board_LED_ON);
-        } else if (input == 'b') {
-            GPIO_write(Board_LED0, Board_LED_OFF);
+
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE,GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3);
+
+
+    while(1){
+        while(!UARTCharsAvail(UART3_BASE));
+        data=UARTCharGetNonBlocking(UART3_BASE);
+
+        if(data=='r'){
+            LED = 2;
+            bluetoothSendMessage("\nRED\n");
+            }
+        else if(data=='b'){
+            LED = 4;
+
+            bluetoothSendMessage("\nBLUE\n");
         }
-    }
+        else if(data=='g'){
+            LED = 8;
+
+            bluetoothSendMessage("\nGREEN\n");
+            }
+        else if(data=='w'){
+            LED = 14;
+
+            bluetoothSendMessage("\nWHITE\n");
+        }
+
+        else if(data=='c'){
+                   LED = 0;
+
+                   bluetoothSendMessage("\nCLEAR\n");
+               }
+
+
+        else{
+
+            bluetoothSendMessage("\nINVALID\n");
+        }
+
+    GPIOPinWrite(GPIO_PORTF_BASE,GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, LED);
+    SysCtlDelay(10000000);
+
+        }
+    UARTDisable(UART1_BASE);
 }
+
+
+void bluetoothSendMessage(char *array){
+    while(*array){
+        UARTCharPut(UART3_BASE,*array);
+        array++;}}

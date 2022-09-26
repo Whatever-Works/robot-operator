@@ -11,7 +11,7 @@ var makeAssembly = false;
 var Executable = xdc.module('xdc.bld.Executable');
 
 var exeOpts = new Executable.Attrs({
-        cfgScript: 'C:/Users/Aaron/Documents/GitHub/robot-operator/Team7_Milestone2_Pettigrew_Hillary_Robertson/empty.cfg',
+        cfgScript: 'C:/Users/Zachary/Documents/GitHub/robot-operator/Team7_Milestone2_Pettigrew_Hillary_Robertson/empty.cfg',
         profile: 'release',
         cfgHome: 'configPkg',
 });
@@ -41,7 +41,7 @@ else {
 
 var thisObj = {
     cfg:        '../empty.cfg',
-    outputPath: 'C:/Users/Aaron/Documents/GitHub/robot-operator/Team7_Milestone2_Pettigrew_Hillary_Robertson/Debug/configPkg',
+    outputPath: 'C:/Users/Zachary/Documents/GitHub/robot-operator/Team7_Milestone2_Pettigrew_Hillary_Robertson/Debug/configPkg',
     exeName:    'empty' + suffix,
     exeIntName: 'empty' + suffix.replace('.', '_'),
     targ:       targ,
