@@ -14,9 +14,7 @@
 
 void bluetoothSendMessage(char *array);
 
-/* HC06 BLUETOOTH
- * TX-->PC6
- * RX-->PC7*/
+
 
 int main(void)
 {
@@ -25,11 +23,11 @@ int main(void)
 
     SysCtlClockSet(SYSCTL_SYSDIV_4|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);
 
-    //HC06 BLUETOOTH Pinleri
+
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);
-    GPIOPinConfigure(GPIO_PC6_U3RX);
-    GPIOPinConfigure(GPIO_PC7_U3TX);
-    GPIOPinTypeUART(GPIO_PORTC_BASE,GPIO_PIN_6|GPIO_PIN_7);
+    GPIOPinConfigure(GPIO_PC6_U3RX);    // PC6 RECEIVE
+    GPIOPinConfigure(GPIO_PC7_U3TX);         //PC7 Transmit
+    GPIOPinTypeUART(GPIO_PORTC_BASE,GPIO_PIN_6|GPIO_PIN_7); //SET PC6 and PC7 to uart
     SysCtlPeripheralEnable(SYSCTL_PERIPH_UART3);
     UARTConfigSetExpClk(UART3_BASE,SysCtlClockGet(),9600,(UART_CONFIG_WLEN_8 | UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_ONE));
     UARTEnable(UART3_BASE);
@@ -77,7 +75,7 @@ int main(void)
             bluetoothSendMessage("\nINVALID\n");
         }
 
-    GPIOPinWrite(GPIO_PORTF_BASE,GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, LED);
+    GPIOPinWrite(GPIO_PORTF_BASE,GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, LED); //14=white 8= green 4=blue 2=red      binary
     SysCtlDelay(10000000);
 
         }
