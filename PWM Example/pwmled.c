@@ -60,42 +60,24 @@ Task_Handle task;
  */
 Void pwmLEDFxn(UArg arg0, UArg arg1)
 {
-    PWM_Handle pwm1;
-    PWM_Handle pwm2 = NULL;
+    PWM_Handle pwm0;
     PWM_Params params;
     uint16_t   pwmPeriod = 3000;      // Period and duty in microseconds
-    uint16_t   duty = 0;
-    uint16_t   dutyInc = 100;
 
     PWM_Params_init(&params);
     params.period = pwmPeriod;
-    pwm1 = PWM_open(Board_PWM0, &params);
-    if (pwm1 == NULL) {
+    params.dutyMode = PWM_DUTY_SCALAR;
+    pwm0 = PWM_open(Board_PWM0, &params);
+    if (pwm0 == NULL) {
         System_abort("Board_PWM0 did not open");
     }
 
-    if (Board_PWM1 != Board_PWM0) {
-        params.polarity = PWM_POL_ACTIVE_LOW;
-        pwm2 = PWM_open(Board_PWM1, &params);
-        if (pwm2 == NULL) {
-            System_abort("Board_PWM1 did not open");
-        }
-    }
-
-    /* Loop forever incrementing the PWM duty */
-    while (1) {
-        PWM_setDuty(pwm1, duty);
-
-        if (pwm2) {
-            PWM_setDuty(pwm2, duty);
-        }
-
-        duty = (duty + dutyInc);
-        if (duty == pwmPeriod || (!duty)) {
-            dutyInc = - dutyInc;
-        }
-
-        Task_sleep((UInt) arg0);
+    // duty value is scalar meaning 0% == 0 and 100% == 65,535
+    while(1) {
+        PWM_setDuty(pwm0, 19660);
+        Task_sleep(1000);
+        PWM_setDuty(pwm0, 58981);
+        Task_sleep(1000);
     }
 }
 
@@ -119,7 +101,7 @@ int main(void)
     Task_construct(&tsk0Struct, (Task_FuncPtr)pwmLEDFxn, &tskParams, NULL);
 
     /* Obtain instance handle */
-    task = Task_handle(&tsk0Struct);
+//    Task_handle(&tsk0Struct);
 
     /* Turn on user LED */
     GPIO_write(Board_LED0, Board_LED_ON);
