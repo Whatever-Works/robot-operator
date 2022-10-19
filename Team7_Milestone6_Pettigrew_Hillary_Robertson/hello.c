@@ -25,6 +25,9 @@
 PWM_Handle motor1;
 PWM_Handle motor2;      //global variables
 PWM_Params params;
+void PIDControl(){  //called every 50 ms by bios
+
+}
 void printDistance(){
     int i=0;
     for(i=0;i<15;i++){
