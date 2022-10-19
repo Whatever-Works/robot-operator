@@ -243,7 +243,7 @@ getstring(uartstring); //pulls 2 character string from UART
 UARTprintf("your input: %s\n",uartstring);
         for (i = 0; i < 25; i++)
         {
-            if (strcmp(uartstring, LUT[i].funname) == 0)  //IF UART STRING == 2 Char Function abbreviation than set function pointer to respective function.
+            if (strcmp(uartstring, LUT[i].funname) == 0)  //IF UART STRING ==  Function abbreviation. then set function pointer to respective function.
             {
                 fun = LUT[i].func;
                 fun();
