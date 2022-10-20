@@ -11,9 +11,10 @@
 #include "driverlib/gpio.h"
 #include "driverlib/pin_map.h"
 #include "driverlib/uart.h"
-#include <xdc/runtime/System.h>
-#include <ti/sysbios/BIOS.h>
-#include <ti/sysbios/knl/Task.h>
+
+//#include <xdc/runtime/System.h>
+//#include <ti/sysbios/BIOS.h>
+//#include <ti/sysbios/knl/Task.h>
 #include <ti/drivers/GPIO.h>
 #include <ti/drivers/PWM.h>
 #include "driverlib/adc.h"
@@ -25,9 +26,6 @@
 PWM_Handle motor1;
 PWM_Handle motor2;      //global variables
 PWM_Params params;
-void PIDControl(){  //called every 50 ms by bios
-
-}
 void printDistance(){
     int i=0;
     for(i=0;i<15;i++){
@@ -76,7 +74,16 @@ void ConfigureADC() {
     ADCIntClear(ADC0_BASE, 3);
     ADCIntClear(ADC0_BASE, 2);
 }
+void setCustomSpeedBothMotors(){
+    char mystring[3];
+    UARTprintf("Enter speed 0-99\n");
+    getstring(mystring);
+    int percentage = ((int)mystring[0]-48)*10 +((int)mystring[1]-48);
+    UARTprintf("both motors set to %d percent\n",percentage);
+    leftMotorCustomSpeed((double)percentage);
+    rightMotorCustomSpeed((double)percentage);
 
+}
 void leftmotorfast(){  // this function sets PWM to 100% duty cycle
     PWM_setDuty(motor1,65535);
     UARTprintf("Left Motor Fast\n");
@@ -85,26 +92,35 @@ void leftmotorslow(){  // this function sets PWM to 33% duty cycle
     PWM_setDuty(motor1,65535/3);
     UARTprintf("Left Motor Slow\n");
 }
-void leftmotorstop(){// this function turns off PWM(disables pin)
-    PWM_close(motor1);
+void leftmotorstop(){// this function turns duty cycle to zero
+    PWM_setDuty(motor1,0);
+    //PWM_close(motor1);
     UARTprintf("Left Motor Stop\n");
 }
 void leftmotorstart(){  //enables PWM with a 0% duty cycle. you must call leftmotorfast or leftmotorslow to actually get the motor going.
            motor1 =  PWM_open(Board_PWM0, &params);   //PWM0= PWM6 = PF2= Blue LED
            UARTprintf("Left Motor Start \n");
        }
+leftMotorCustomSpeed(double speed){ // ENTER PERCENTAGE 0-100
+    PWM_setDuty(motor1,65535*(speed/100));
 
+}
 
 void rightmotorfast(){  // this function sets PWM to 100% duty cycle
     PWM_setDuty(motor2,65535);
     UARTprintf("Right Motor Fast\n");
 }
+rightMotorCustomSpeed(double speed){ // ENTER PERCENTAGE 0-100
+    PWM_setDuty(motor2,65535*(speed/100));
+
+}
 void rightmotorslow(){  // this function sets PWM to 33% duty cycle
     PWM_setDuty(motor2,65535/3);
     UARTprintf("Right Motor Slow\n");
 }
-void rightmotorstop(){ // this function turns off PWM(disables pin)
-    PWM_close(motor2);
+void rightmotorstop(){ // duty cycle to zero
+    PWM_setDuty(motor2,0);
+    //PWM_close(motor2);
     UARTprintf("Right Motor Stop\n");
 }
 void rightmotorstart(){  //enables PWM with a 0% duty cycle. you must call rightmotorfast or rightmotorslow to actually get the motor going.
@@ -157,8 +173,8 @@ void clear()
 }
 void getstring(char uartstring[]){
 
-    uartstring[0] = UARTCharGet(UART0_BASE); //UART0 = USB               UART3 = BLUETOOTH
-            uartstring[1] = UARTCharGet(UART0_BASE);
+    uartstring[0] = UARTCharGet(UART1_BASE); //UART0 = USB               UART1 = BLUETOOTH
+            uartstring[1] = UARTCharGet(UART1_BASE);
 
 }
 struct lut
@@ -170,9 +186,7 @@ struct lut
 struct lut LUT[25] =
     {
         {"re", red},
-        {"bl", blue},
-        {"gr", green},
-        {"wh", white},
+        {"bc", setCustomSpeedBothMotors},
         {"cl", clear},
         {"ls", leftmotorstart},
         {"lf", leftmotorfast},
@@ -188,72 +202,47 @@ struct lut LUT[25] =
 void bluetoothSendMessage(char *array);
 
 
-void ConfigureUART()
+ConfigureUART(void)
 {
     //
     // Enable the GPIO Peripheral used by the UART.
     //
-   SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
+   SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);
 
     //
-    // Enable UART0
+    // Enable UART1
     //
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);
 
     //
     // Configure GPIO Pins for UART mode.
     //
-   GPIOPinConfigure(GPIO_PA0_U0RX);
-    GPIOPinConfigure(GPIO_PA1_U0TX);
-   GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
+   GPIOPinConfigure(GPIO_PC4_U1RX);                                 //PC4RX PC5TX
+    GPIOPinConfigure(GPIO_PC5_U1TX);
+   GPIOPinTypeUART(GPIO_PORTC_BASE, GPIO_PIN_4 | GPIO_PIN_5);
 
     //
     // Use the internal 16MHz oscillator as the UART clock source.
     //
-    UARTClockSourceSet(UART0_BASE, UART_CLOCK_PIOSC);
+    UARTClockSourceSet(UART1_BASE, UART_CLOCK_PIOSC);
 
     //
     // Initialize the UART for console I/O.
     //
-    UARTStdioConfig(0, 115200, 16000000);
+    UARTStdioConfig(1, 9600, 16000000);
 }
-void btControl(){
-    void (*fun)(void);
-    char uartstring[3]="";
-    int i = 0;
-    while (1)
-      {
 
-  getstring(uartstring); //pulls 2 character string from UART
-  UARTprintf("your input: %s\n",uartstring);
-          for (i = 0; i < 25; i++)
-          {
-              if (strcmp(uartstring, LUT[i].funname) == 0)  //IF UART STRING ==  Function abbreviation. then set function pointer to respective function.
-              {
-                  fun = LUT[i].func;
-                  fun();
-                  break;
-              }
-
-
-          }
-          if(i==25)UARTprintf("Invalid input!\n");
-
-      }
-
-
-
-
-}
 
 
 
 int main(void)
 {
-
+char uartstring[3]="";
+int i = 0;
+void (*fun)(void);
 SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_XTAL_16MHZ | SYSCTL_OSC_MAIN);
-       Board_initGeneral();
-       Board_initGPIO();
+Board_initGeneral();
+  Board_initGPIO();
        Board_initPWM();
        ConfigureUART();
        ConfigureADC();
@@ -261,9 +250,28 @@ SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_XTAL_16MHZ | SYSCTL_OSC
        PWM_Params_init(&params);
        params.dutyMode =PWM_DUTY_SCALAR; //0=0%duty cycle 65535=100% duty cycle
 
-btControl();
 
 
+    while (1)
+    {
 
+getstring(uartstring); //pulls 2 character string from UART
+UARTprintf("your input: %s\n",uartstring);
+        for (i = 0; i < 25; i++)
+        {
+            if (strcmp(uartstring, LUT[i].funname) == 0)  //IF UART STRING ==  Function abbreviation. then set function pointer to respective function.
+            {
+                fun = LUT[i].func;
+                fun();
+                break;
+            }
+
+
+        }
+        if(i==25)UARTprintf("Invalid input!\n");
+
+    }
+
+    UARTDisable(UART0_BASE);
 }
 
