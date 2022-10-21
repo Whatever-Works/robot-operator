@@ -1,0 +1,12 @@
+package.xdc
+package.xs
+package/xconfig_clock.sch
+package/.vers_g180
+package/.vers_r170
+package/.vers_b160
+package/.xdc-B06
+package/xconfig_clock.java
+package/xconfig_clock.class
+package/package_xconfig_clock.c
+package/package.defs.h
+package/xconfig_clock.ccs

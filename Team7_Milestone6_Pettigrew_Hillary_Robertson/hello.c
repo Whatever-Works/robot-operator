@@ -12,20 +12,26 @@
 #include "driverlib/pin_map.h"
 #include "driverlib/uart.h"
 
-//#include <xdc/runtime/System.h>
-//#include <ti/sysbios/BIOS.h>
-//#include <ti/sysbios/knl/Task.h>
+#include <xdc/runtime/System.h>
+#include <ti/sysbios/BIOS.h>
+#include <ti/sysbios/knl/Task.h>
 #include <ti/drivers/GPIO.h>
 #include <ti/drivers/PWM.h>
 #include "driverlib/adc.h"
 #include "utils/uartstdio.h"
 #include "Board.h"
 #include <math.h>
+#include "driverlib/timer.h"
+
 
 //#include "rom.h"
 PWM_Handle motor1;
 PWM_Handle motor2;      //global variables
 PWM_Params params;
+int frontdist;
+int sidedist;
+int pidcounter=0;
+double LastError=0;
 void printDistance(){
     int i=0;
     for(i=0;i<15;i++){
@@ -38,23 +44,23 @@ void printDistance(){
 UARTprintf("\n");
 
 }
-int findDistanceFront() {  //PE3
+double findDistanceFront() {  //PE3
     uint32_t ADCValue[1];
     ADCProcessorTrigger(ADC0_BASE, 3);
     while (!ADCIntStatus(ADC0_BASE, 3, false)) {}
     ADCIntClear(ADC0_BASE, 3);
     ADCSequenceDataGet(ADC0_BASE, 3, ADCValue);
-    int distance = (int)14871 * pow(ADCValue[0], -.995); //this eq converts ADC value to cm
+    double distance = 14871 * pow(ADCValue[0], -.995); //this eq converts ADC value to cm
     return distance;
 }
 
-int findDistanceSide() {   //PE2
+double findDistanceSide() {   //PE2
     uint32_t ADCValue[1];
     ADCProcessorTrigger(ADC0_BASE, 2);
     while (!ADCIntStatus(ADC0_BASE, 2, false)) {}
     ADCIntClear(ADC0_BASE, 2);
     ADCSequenceDataGet(ADC0_BASE, 2, ADCValue);
-    int distance = (int)14871 * pow(ADCValue[0], -.995); //this eq converts ADC value to cm
+    double distance = 14871 * pow(ADCValue[0], -.995); //this eq converts ADC value to cm
     return distance;
 
 }
@@ -101,7 +107,7 @@ void leftmotorstart(){  //enables PWM with a 0% duty cycle. you must call leftmo
            motor1 =  PWM_open(Board_PWM0, &params);   //PWM0= PWM6 = PF2= Blue LED
            UARTprintf("Left Motor Start \n");
        }
-leftMotorCustomSpeed(double speed){ // ENTER PERCENTAGE 0-100
+leftmotorcustomspeed(double speed){ // ENTER PERCENTAGE 0-100
     PWM_setDuty(motor1,65535*(speed/100));
 
 }
@@ -110,7 +116,7 @@ void rightmotorfast(){  // this function sets PWM to 100% duty cycle
     PWM_setDuty(motor2,65535);
     UARTprintf("Right Motor Fast\n");
 }
-rightMotorCustomSpeed(double speed){ // ENTER PERCENTAGE 0-100
+rightmotorcustomspeed(double speed){ // ENTER PERCENTAGE 0-100
     PWM_setDuty(motor2,65535*(speed/100));
 
 }
@@ -232,46 +238,91 @@ ConfigureUART(void)
     UARTStdioConfig(1, 9600, 16000000);
 }
 
+void btUART(){
+    char uartstring[3]="";
+    int i = 0;
+    void (*fun)(void);
+
+    while (1)
+       {
+
+   getstring(uartstring); //pulls 2 character string from UART
+   UARTprintf("your input: %s\n",uartstring);
+           for (i = 0; i < 25; i++)
+           {
+               if (strcmp(uartstring, LUT[i].funname) == 0)  //IF UART STRING ==  Function abbreviation. then set function pointer to respective function.
+               {
+                   fun = LUT[i].func;
+                   fun();
+                   break;
+               }
 
 
+           }
+           if(i==25)UARTprintf("Invalid input!\n");
 
+       }
+}
+void pid(){
+    //PID CALCULATIONS
+    double sidedistance = findDistanceSide();
+    double Error = (sidedistance-14);
+    double P=15*fabs(Error);
+    double I=1.5*(Error+LastError);
+    double D=1*(Error-LastError);
+    double PID=(P+I+D);
+      if(PID>98)PID=98; // dont let PID value go over 98
+
+    if(Error>0){                         //ROBOT IS VEERING LEFT        SLOW DOWN RIGHT MOTOR
+        rightmotorcustomspeed(99-PID);
+        leftmotorcustomspeed(99);
+          }
+    if(Error<0){                                 // ROBOT IS VEERING RIGHT       SLOW DOWN LEFT MOTOR
+        leftmotorcustomspeed(99-PID);
+        rightmotorcustomspeed(99);
+    }
+
+   // UARTprintf("%d %d \n",(int)sidedistance,(int)PID);
+   // GPIO_toggle(Board_LED2);
+   // pidcounter++;
+    LastError=Error;
+    TimerIntClear(TIMER2_BASE, TIMER_TIMA_TIMEOUT);
+}
+void ConfigureTimer2A(){
+    // Timer 2 setup code           50 MS
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER2);           // enable Timer 2 periph clks
+    TimerConfigure(TIMER2_BASE, TIMER_CFG_PERIODIC);        // cfg Timer 2 mode - periodic
+
+    uint32_t ui32Period = (SysCtlClockGet() /20);                     // period = 1/20th of a second AKA 50MS
+    TimerLoadSet(TIMER2_BASE, TIMER_A, ui32Period);         // set Timer 2 period
+
+    TimerIntEnable(TIMER2_BASE, TIMER_TIMA_TIMEOUT);        // enables Timer 2 to interrupt CPU
+
+    TimerEnable(TIMER2_BASE, TIMER_A);                      // enable Timer 2
+}
 int main(void)
 {
-char uartstring[3]="";
-int i = 0;
-void (*fun)(void);
+
 SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_XTAL_16MHZ | SYSCTL_OSC_MAIN);
 Board_initGeneral();
   Board_initGPIO();
        Board_initPWM();
        ConfigureUART();
        ConfigureADC();
+       ConfigureTimer2A();
        UARTprintf("Hello World!\n");
        PWM_Params_init(&params);
        params.dutyMode =PWM_DUTY_SCALAR; //0=0%duty cycle 65535=100% duty cycle
+       sidedist=findDistanceSide(); //initial side distance for pid calc
+leftmotorstart();
+rightmotorstart();
+leftmotorcustomspeed(90);
+rightmotorcustomspeed(90);
+BIOS_start();
 
 
 
-    while (1)
-    {
 
-getstring(uartstring); //pulls 2 character string from UART
-UARTprintf("your input: %s\n",uartstring);
-        for (i = 0; i < 25; i++)
-        {
-            if (strcmp(uartstring, LUT[i].funname) == 0)  //IF UART STRING ==  Function abbreviation. then set function pointer to respective function.
-            {
-                fun = LUT[i].func;
-                fun();
-                break;
-            }
-
-
-        }
-        if(i==25)UARTprintf("Invalid input!\n");
-
-    }
-
-    UARTDisable(UART0_BASE);
+    //UARTDisable(UART0_BASE);
 }
 
