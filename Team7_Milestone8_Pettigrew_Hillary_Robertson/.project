@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>hello</name>
+	<name>Team7_Milestone8_Pettigrew_Hillary_Robertson</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -18,27 +18,11 @@
 		</buildCommand>
 	</buildSpec>
 	<natures>
+		<nature>org.eclipse.rtsc.xdctools.buildDefinitions.XDC.xdcNature</nature>
 		<nature>com.ti.ccstudio.core.ccsNature</nature>
 		<nature>org.eclipse.cdt.core.cnature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
 		<nature>org.eclipse.cdt.core.ccnature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 	</natures>
-	<linkedResources>
-		<link>
-			<name>utils/uartstdio.c</name>
-			<type>1</type>
-			<locationURI>SW_ROOT/utils/uartstdio.c</locationURI>
-		</link>
-	</linkedResources>
-	<variableList>
-		<variable>
-			<name>ORIGINAL_PROJECT_ROOT</name>
-			<value>file:/C:/ti/TivaWare_C_Series-2.1.4.178/examples/boards/ek-tm4c123gxl/hello/ccs</value>
-		</variable>
-		<variable>
-			<name>SW_ROOT</name>
-			<value>$%7BPARENT-5-ORIGINAL_PROJECT_ROOT%7D</value>
-		</variable>
-	</variableList>
 </projectDescription>
