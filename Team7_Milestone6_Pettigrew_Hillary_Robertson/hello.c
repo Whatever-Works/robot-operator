@@ -265,8 +265,9 @@ void btUART(){
 }
 void pid(){
     //PID CALCULATIONS
+    double frontdistance = findDistanceFront();
     double sidedistance = findDistanceSide();
-    double Error = (sidedistance-14);
+    double Error = (sidedistance-10);
     double P=15*fabs(Error);
     double I=1.5*(Error+LastError);
     double D=1*(Error-LastError);
@@ -282,12 +283,20 @@ void pid(){
         rightmotorcustomspeed(99);
     }
 
-   // UARTprintf("%d %d \n",(int)sidedistance,(int)PID);
-   // GPIO_toggle(Board_LED2);
-   // pidcounter++;
     LastError=Error;
+    //IF FRONTDISTANCE <12cm U TURN
+   /* if(frontdistance<12){
+        leftmotorcustomspeed(99);
+        rightmotorcustomspeed(0);
+        while(frontdistance<16); //turn until front distance >16
+    }*/
     TimerIntClear(TIMER2_BASE, TIMER_TIMA_TIMEOUT);
 }
+
+
+
+
+
 void ConfigureTimer2A(){
     // Timer 2 setup code           50 MS
     SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER2);           // enable Timer 2 periph clks
@@ -316,8 +325,8 @@ Board_initGeneral();
        sidedist=findDistanceSide(); //initial side distance for pid calc
 leftmotorstart();
 rightmotorstart();
-leftmotorcustomspeed(90);
-rightmotorcustomspeed(90);
+//leftmotorcustomspeed(90);
+//rightmotorcustomspeed(90);
 BIOS_start();
 
 
