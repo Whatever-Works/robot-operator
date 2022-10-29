@@ -7,5 +7,5 @@
 #       or equal to the generated config header
 #
 linker.cmd: package/cfg/hello_pem4f.xdl
-	$(SED) 's"^\"\(package/cfg/hello_pem4fcfg.cmd\)\"$""\"C:/Users/Zachary/Documents/GitHub/robot-operator/Team7_Milestone6_Pettigrew_Hillary_Robertson/.config/xconfig_hello/\1\""' package/cfg/hello_pem4f.xdl > $@
+	$(SED) 's"^\"\(package/cfg/hello_pem4fcfg.cmd\)\"$""\"C:/Users/Zachary/Documents/GitHub/robot-operator/Team7_Milestone8_Pettigrew_Hillary_Robertson/.config/xconfig_hello/\1\""' package/cfg/hello_pem4f.xdl > $@
 	-$(SETDATE) -r:max package/cfg/hello_pem4f.h compiler.opt compiler.opt.defs

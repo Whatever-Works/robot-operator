@@ -87,10 +87,10 @@ void ConfigureADC()
 
     ADCSequenceConfigure(ADC0_BASE, 3, ADC_TRIGGER_PROCESSOR, 0);
     ADCSequenceStepConfigure(ADC0_BASE, 3, 0,
-                             ADC_CTL_CH0 | ADC_CTL_IE | ADC_CTL_END);  //PE3
+    ADC_CTL_CH0 | ADC_CTL_IE | ADC_CTL_END);  //PE3
     ADCSequenceConfigure(ADC0_BASE, 2, ADC_TRIGGER_PROCESSOR, 0);
     ADCSequenceStepConfigure(ADC0_BASE, 2, 0,
-                             ADC_CTL_CH1 | ADC_CTL_IE | ADC_CTL_END);  //PE2
+    ADC_CTL_CH1 | ADC_CTL_IE | ADC_CTL_END);  //PE2
     ADCSequenceEnable(ADC0_BASE, 3);
     ADCSequenceEnable(ADC0_BASE, 2);
     ADCIntClear(ADC0_BASE, 3);
@@ -103,8 +103,8 @@ void setCustomSpeedBothMotors()
     getstring1(mystring);
     int percentage = ((int) mystring[0] - 48) * 10 + ((int) mystring[1] - 48);
     UARTprintf("both motors set to %d percent\n", percentage);
-    leftMotorCustomSpeed((double) percentage);
-    rightMotorCustomSpeed((double) percentage);
+    leftmotorcustomspeed((double) percentage);
+    rightmotorcustomspeed((double) percentage);
 
 }
 void leftmotorfast()
@@ -161,49 +161,8 @@ void rightmotorstart()
     UARTprintf("Right Motor Start\n");
 }
 
-void bluetoothSendMessage(char *array)
-{
-    while (*array)
-    {
-        UARTCharPut(UART3_BASE, *array);
-        array++;
-    }
-}
 
-void red()
-{
-    int LED = 2;
-    UARTprintf("\nRED\n");
-    GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3, LED); //14=white 8= green 4=blue 2=red      binary
-}
 
-void blue()
-{
-    int LED = 4;
-
-    UARTprintf("\nBLUE\n");
-    GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3, LED);
-}
-
-void green()
-{
-    int LED = 8;
-    UARTprintf("\nGREEN\n");
-    GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3, LED);
-}
-
-void white()
-{
-    int LED = 14;
-    UARTprintf("\nWHITE\n");
-    GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3, LED);
-}
-void clear()
-{
-    int LED = 0;
-    UARTprintf("\nCLEAR\n");
-    GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3, LED);
-}
 
 struct lut
 {
@@ -211,8 +170,7 @@ struct lut
     void (*func)(void);
 };
 
-struct lut LUT[25] = { { "re", red }, { "bc", setCustomSpeedBothMotors }, {
-        "cl", clear },
+struct lut LUT[25] = {  { "bc", setCustomSpeedBothMotors },
                        { "ls", leftmotorstart }, { "lf", leftmotorfast }, {
                                "sl", leftmotorslow },
                        { "el", leftmotorstop }, { "rs", rightmotorstart }, {
@@ -273,13 +231,13 @@ void btUART()
             }
 
         }
-        if (i == 25)
-            UARTprintf("Invalid input!\n");
+        if (i == 25) UARTprintf("Invalid input!\n");
 
     }
 }
 void pid()
 {
+
     //PID CALCULATIONS
     double frontdistance = findDistanceFront();
     double sidedistance = findDistanceSide();
@@ -288,8 +246,7 @@ void pid()
     double I = 1.5 * (Error + LastError);
     double D = 1 * (Error - LastError);
     double PID = (P + I + D);
-    if (PID > 98)
-        PID = 98; // dont let PID value go over 98
+    if (PID > 98) PID = 98; // dont let PID value go over 98
 
     if (Error > 0)
     {                       //ROBOT IS VEERING LEFT        SLOW DOWN RIGHT MOTOR
@@ -297,17 +254,17 @@ void pid()
         leftmotorcustomspeed(99);
     }
     if (Error < 0)
-    {                       // ROBOT IS VEERING RIGHT       SLOW DOWN LEFT MOTOR
+    {                         // ROBOT IS VEERING RIGHT       SLOW DOWN LEFT MOTOR
         leftmotorcustomspeed(99 - PID);
         rightmotorcustomspeed(99);
     }
 
     LastError = Error;
-    //IF FRONTDISTANCE <12cm U TURN
-    if (frontdistance < 8)
+
+    if (frontdistance < 8)//IF FRONTDISTANCE <8 cm U TURN
     {
 
-        GPIOPinWrite(GPIO_PORTA_BASE, GPIO_PIN_7,  GPIO_PIN_7); //SET LEFT MOTOR TO REVERSE
+        GPIOPinWrite(GPIO_PORTA_BASE, GPIO_PIN_7, GPIO_PIN_7); //SET LEFT MOTOR TO REVERSE
         leftmotorcustomspeed(99);
         rightmotorcustomspeed(99);
         while (findDistanceFront() < 16); //turn until front distance >16
@@ -329,18 +286,79 @@ void ConfigureTimer2A()
 
     TimerEnable(TIMER2_BASE, TIMER_A);                      // enable Timer 2
 }
+
+void ConfigureTimer1A()
+{
+    // Timer 1 setup code           10 MS
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER1);  // enable Timer 1 periph clks
+    TimerConfigure(TIMER1_BASE, TIMER_CFG_PERIODIC); // cfg Timer 1 mode - periodic
+
+    uint32_t ui32Period = (SysCtlClockGet() / 100); // period = 1/100th of a second AKA 10MS
+    TimerLoadSet(TIMER1_BASE, TIMER_A, ui32Period);        // set Timer 1 period
+
+    TimerIntEnable(TIMER1_BASE, TIMER_TIMA_TIMEOUT); // enables Timer 2 to interrupt CPU
+
+    TimerEnable(TIMER1_BASE, TIMER_A);                      // enable Timer 2
+}
+
+int reflectance()
+{
+    int cycles = 0;
+
+    GPIOPinTypeGPIOOutput(GPIO_PORTA_BASE, GPIO_PIN_6);  //set output
+    GPIOPinWrite(GPIO_PORTA_BASE, GPIO_PIN_6, GPIO_PIN_6); //set high... starts charging capacitor
+    SysCtlDelay(SysCtlClockGet() / 80000); //wait for capacitor to charge 12.5us
+    GPIOPinTypeGPIOInput(GPIO_PORTA_BASE, GPIO_PIN_6);            //set input
+    while (GPIOPinRead(GPIO_PORTA_BASE, GPIO_PIN_6) == GPIO_PIN_6) // while capacitor is not discharged..... finds how many [us] it takes to discharge capacitor
+    {
+        SysCtlDelay(SysCtlClockGet() / 1000000);      //delay 1 us
+        cycles++;
+    }
+    if (cycles > 250)
+        return 1;      //UARTprintf("Black\n",cycles);
+    else
+        return 0;      //UARTprintf("White\n");
+}
+
+
+
+int numThinLines=0;
+
+
+void blacklineinterrupt()  //CALLED EVERY 10 MS
+{
+
+    int cycles = 0;
+    while (reflectance() == 1)       //WHILE SENSOR READING BLACK
+    {
+        cycles++;
+    }
+    if (cycles > 15)            //IF MORE THAN 15 CYCLES IT MUST BE THICCCCCC
+    {
+        // STOP
+        UARTprintf("Large strip hit numCycles:%d\n",cycles);
+    }
+    if((cycles>3)&&(cycles<16)){                     //IF LESS THAN 16 cycles must be thin line
+        numThinLines++;
+        UARTprintf("Thin line #%d hit   numCycles:%d \n",numThinLines,cycles);
+    }
+
+    TimerIntClear(TIMER1_BASE, TIMER_TIMA_TIMEOUT);
+}
+
+
+
 int main(void)
 {
 
-    SysCtlClockSet(
-            SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_XTAL_16MHZ
-                    | SYSCTL_OSC_MAIN);
+    SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_XTAL_16MHZ | SYSCTL_OSC_MAIN);
     Board_initGeneral();
     Board_initGPIO();
     Board_initPWM();
     ConfigureUART();
     ConfigureADC();
     ConfigureTimer2A();
+    ConfigureTimer1A();
     UARTprintf("Hello World!\n");
     PWM_Params_init(&params);
     params.dutyMode = PWM_DUTY_SCALAR; //0=0%duty cycle 65535=100% duty cycle
@@ -349,11 +367,12 @@ int main(void)
     rightmotorstart();
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
     GPIOPinTypeGPIOOutput(GPIO_PORTA_BASE, GPIO_PIN_7);
-    //GPIOPinWrite(GPIO_PORTA_BASE, GPIO_PIN_7,  GPIO_PIN_7); //SET LEFT MOTOR TO REVERSE
 
+    /*while(1){
+     reflectance();
+     SysCtlDelay(SysCtlClockGet() / 6);
+     }*/
 
-//leftmotorcustomspeed(90);
-//rightmotorcustomspeed(90);
     BIOS_start();
 
     //UARTDisable(UART0_BASE);
