@@ -308,7 +308,7 @@ int reflectance()
     GPIOPinTypeGPIOOutput(GPIO_PORTA_BASE, GPIO_PIN_6);  //set output
     GPIOPinWrite(GPIO_PORTA_BASE, GPIO_PIN_6, GPIO_PIN_6); //set high... starts charging capacitor
     SysCtlDelay(SysCtlClockGet() / 80000); //wait for capacitor to charge 12.5us
-    GPIOPinTypeGPIOInput(GPIO_PORTA_BASE, GPIO_PIN_6);            //set input
+    GPIOPinTypeGPIOInput(GPIO_PORTA_BASE, GPIO_PIN_6);            //set input... capacitor starts discharging
     while (GPIOPinRead(GPIO_PORTA_BASE, GPIO_PIN_6) == GPIO_PIN_6) // while capacitor is not discharged..... finds how many [us] it takes to discharge capacitor
     {
         SysCtlDelay(SysCtlClockGet() / 1000000);      //delay 1 us
