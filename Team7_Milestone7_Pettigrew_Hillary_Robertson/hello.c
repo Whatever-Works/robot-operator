@@ -71,9 +71,8 @@ void printDistance()
     UARTprintf("\n");
 
 }
-void getstring1(char uartstring[])
+void getString(char uartstring[])
 {
-
     uartstring[0] = UARTCharGet(UART1_BASE); //UART0 = USB               UART1 = BLUETOOTH
     uartstring[1] = UARTCharGet(UART1_BASE);
 
@@ -87,10 +86,10 @@ void ConfigureADC()
 
     ADCSequenceConfigure(ADC0_BASE, 3, ADC_TRIGGER_PROCESSOR, 0);
     ADCSequenceStepConfigure(ADC0_BASE, 3, 0,
-                             ADC_CTL_CH0 | ADC_CTL_IE | ADC_CTL_END);  //PE3
+    ADC_CTL_CH0 | ADC_CTL_IE | ADC_CTL_END);  //PE3
     ADCSequenceConfigure(ADC0_BASE, 2, ADC_TRIGGER_PROCESSOR, 0);
     ADCSequenceStepConfigure(ADC0_BASE, 2, 0,
-                             ADC_CTL_CH1 | ADC_CTL_IE | ADC_CTL_END);  //PE2
+    ADC_CTL_CH1 | ADC_CTL_IE | ADC_CTL_END);  //PE2
     ADCSequenceEnable(ADC0_BASE, 3);
     ADCSequenceEnable(ADC0_BASE, 2);
     ADCIntClear(ADC0_BASE, 3);
@@ -100,7 +99,7 @@ void setCustomSpeedBothMotors()
 {
     char mystring[3];
     UARTprintf("Enter speed 0-99\n");
-    getstring1(mystring);
+    getString(mystring);
     int percentage = ((int) mystring[0] - 48) * 10 + ((int) mystring[1] - 48);
     UARTprintf("both motors set to %d percent\n", percentage);
     leftMotorCustomSpeed((double) percentage);
@@ -211,14 +210,20 @@ struct lut
     void (*func)(void);
 };
 
-struct lut LUT[25] = { { "re", red }, { "bc", setCustomSpeedBothMotors }, {
-        "cl", clear },
-                       { "ls", leftmotorstart }, { "lf", leftmotorfast }, {
-                               "sl", leftmotorslow },
-                       { "el", leftmotorstop }, { "rs", rightmotorstart }, {
-                               "rf", rightmotorfast },
-                       { "sr", rightmotorslow }, { "er", rightmotorstop }, {
-                               "pd", printDistance } };
+struct lut LUT[25] = {
+{ "re", red },
+{ "bc", setCustomSpeedBothMotors },
+{ "cl", clear },
+{ "ls", leftmotorstart },
+{ "lf", leftmotorfast },
+{ "sl", leftmotorslow },
+{ "el", leftmotorstop },
+{ "rs", rightmotorstart },
+{ "rf", rightmotorfast },
+{ "sr", rightmotorslow },
+{ "er", rightmotorstop },
+{ "pd", printDistance }
+};
 
 void bluetoothSendMessage(char *array);
 
@@ -261,7 +266,7 @@ void btUART()
     while (1)
     {
 
-        getstring1(uartstring); //pulls 2 character string from UART
+        getString(uartstring); //pulls 2 character string from UART
         UARTprintf("your input: %s\n", uartstring);
         for (i = 0; i < 25; i++)
         {
@@ -307,7 +312,7 @@ void pid()
     if (frontdistance < 8)
     {
 
-        GPIOPinWrite(GPIO_PORTA_BASE, GPIO_PIN_7,  GPIO_PIN_7); //SET LEFT MOTOR TO REVERSE
+        GPIOPinWrite(GPIO_PORTA_BASE, GPIO_PIN_7, GPIO_PIN_7); //SET LEFT MOTOR TO REVERSE
         leftmotorcustomspeed(99);
         rightmotorcustomspeed(99);
         while (findDistanceFront() < 16); //turn until front distance >16
@@ -333,8 +338,7 @@ int main(void)
 {
 
     SysCtlClockSet(
-            SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_XTAL_16MHZ
-                    | SYSCTL_OSC_MAIN);
+    SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_XTAL_16MHZ | SYSCTL_OSC_MAIN);
     Board_initGeneral();
     Board_initGPIO();
     Board_initPWM();
@@ -350,7 +354,6 @@ int main(void)
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
     GPIOPinTypeGPIOOutput(GPIO_PORTA_BASE, GPIO_PIN_7);
     //GPIOPinWrite(GPIO_PORTA_BASE, GPIO_PIN_7,  GPIO_PIN_7); //SET LEFT MOTOR TO REVERSE
-
 
 //leftmotorcustomspeed(90);
 //rightmotorcustomspeed(90);
