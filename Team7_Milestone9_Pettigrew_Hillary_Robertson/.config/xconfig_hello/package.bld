@@ -11,7 +11,7 @@ var makeAssembly = false;
 var Executable = xdc.module('xdc.bld.Executable');
 
 var exeOpts = new Executable.Attrs({
-        cfgScript: 'C:/Users/Zachary/Documents/GitHub/robot-operator/Team7_Milestone8_Pettigrew_Hillary_Robertson/hello.cfg',
+        cfgScript: 'C:/Users/Zachary/Documents/GitHub/robot-operator/Team7_Milestone9_Pettigrew_Hillary_Robertson/hello.cfg',
         profile: 'release',
         cfgHome: 'xconfig_hello',
 });
@@ -40,8 +40,8 @@ else {
 }
 
 var thisObj = {
-    cfg:        'C:/Users/Zachary/Documents/GitHub/robot-operator/Team7_Milestone8_Pettigrew_Hillary_Robertson/hello.cfg',
-    outputPath: 'C:/Users/Zachary/Documents/GitHub/robot-operator/Team7_Milestone8_Pettigrew_Hillary_Robertson/.config/xconfig_hello',
+    cfg:        'C:/Users/Zachary/Documents/GitHub/robot-operator/Team7_Milestone9_Pettigrew_Hillary_Robertson/hello.cfg',
+    outputPath: 'C:/Users/Zachary/Documents/GitHub/robot-operator/Team7_Milestone9_Pettigrew_Hillary_Robertson/.config/xconfig_hello',
     exeName:    'hello' + suffix,
     exeIntName: 'hello' + suffix.replace('.', '_'),
     targ:       targ,
