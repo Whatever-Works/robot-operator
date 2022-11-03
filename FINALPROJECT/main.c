@@ -25,6 +25,12 @@
 #include "Board.h"
 #include <math.h>
 #include "driverlib/timer.h"
+extern void ConfigureADC();
+extern void ConfigureTimer1A();
+extern void ConfigureTimer2A();
+extern void ConfigureUART();
+extern void GPIOConfig();
+extern void PWMConfig();
 extern const Swi_Handle swi0;
 extern const ti_sysbios_knl_Semaphore_Handle Semaphore0;
 extern const ti_sysbios_knl_Semaphore_Handle Semaphore1;
@@ -34,7 +40,7 @@ extern PWM_Params params;
 double LastError = 0;
 int numThinLines=0;    //keep track of how many thin black lines have been passed
 
-int findDistanceFront() //return distance from front sensor as [CM]
+int findDistanceFront() //return distance from front sensor as ADC VALUE
 {  //PE3
     uint32_t ADCValue[1];
     ADCProcessorTrigger(ADC0_BASE, 3);
@@ -48,7 +54,7 @@ int findDistanceFront() //return distance from front sensor as [CM]
     return distance;
 }
 
-int findDistanceSide()// return distance from side sensor as [cm]
+int findDistanceSide()// return distance from side sensor as ADC VALUE
 {   //PE2
     uint32_t ADCValue[1];
     ADCProcessorTrigger(ADC0_BASE, 2);
@@ -114,10 +120,12 @@ void UTURN()
    while (14871 * pow(findDistanceFront(), -.995) < 16);                      //turn until front distance >16 cm
    GPIOPinWrite(GPIO_PORTA_BASE, GPIO_PIN_7, 0);          //set motor back to forward
         }
+
 int pidCycles=0;
 int ping[20];
 int pong[20];
 int*  currentbuffer=ping;
+
 void switchBuffer()//toggle ping/pong buffer
 {
     if (currentbuffer==ping)currentbuffer=pong;
@@ -131,7 +139,6 @@ void pingPongSWIHandler()//CALLED WHEN BUFFER IS FULL
     for( i=0;i<20;i++)UARTprintf("%d [ms]  : %d [ADC Value]\n",((pidCycles-40+2*i)*50),currentbuffer[i]);//print buffer
     switchBuffer();  //switch from ping to pong buffer or pong to ping
 }
-
 
 void pidTask()  //PID for following right wall. also handles U-TURNS.
 {
@@ -213,7 +220,9 @@ int reflectance()       //This function tells you if surface is black or white  
     else
         return 0;      //UARTprintf("White\n");
 }
+
 int counter=0;
+
 void BlackLineInterruptHandler() // called every 10 ms
 {
     TimerIntClear(TIMER1_BASE, TIMER_TIMA_TIMEOUT);     // reset 10 ms timer
@@ -221,6 +230,7 @@ void BlackLineInterruptHandler() // called every 10 ms
     Semaphore_post(Semaphore1);
     // this is gonna start blackline task
 }
+
 int currentreflectance;
 int lastreflectance;
 void blacklineTask()       //detects if robot drives over thin or thick black line.
