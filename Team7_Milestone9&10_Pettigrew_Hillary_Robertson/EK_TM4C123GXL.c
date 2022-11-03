@@ -299,13 +299,13 @@ PWMTiva_Object pwmTivaObjects[EK_TM4C123GXL_PWMCOUNT];
 
 const PWMTiva_HWAttrs pwmTivaHWAttrs[EK_TM4C123GXL_PWMCOUNT] = {
     {
-        .baseAddr = PWM1_BASE,
-        .pwmOutput = PWM_OUT_6,
+        .baseAddr = PWM0_BASE,
+        .pwmOutput = PWM_OUT_0,
         .pwmGenOpts = PWM_GEN_MODE_DOWN | PWM_GEN_MODE_DBG_RUN
     },
     {
-        .baseAddr = PWM1_BASE,
-        .pwmOutput = PWM_OUT_7,
+        .baseAddr = PWM0_BASE,
+        .pwmOutput = PWM_OUT_1,
         .pwmGenOpts = PWM_GEN_MODE_DOWN | PWM_GEN_MODE_DBG_RUN
     }
 };
