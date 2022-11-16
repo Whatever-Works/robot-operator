@@ -132,12 +132,14 @@ void UTURN()
 
 int pidCycles = 0;
 int printHelper = 0;
-int ping[20];
-int pong[20];
-int *currentbuffer = ping;
+char ping[40];
+char pong[40];
+char *currentbuffer = ping;
 
 void switchBuffer()          //toggle ping/pong buffer
 {
+    int i=0;
+    for(i=0;i<40;i++)currentbuffer[i]='\0';// clear buffer
     if (currentbuffer == ping)
     {
         currentbuffer = pong;
@@ -158,20 +160,15 @@ void pingPongTask()
     while (1)
     {
         Semaphore_pend(Semaphore2, BIOS_WAIT_FOREVER);
-        int count;
-        if(printHelper % 40 == 0) {
-            count = 20;
-        } else {
-            count = printHelper % 40 / 2;
-        }
-        int i; //TODO: Are we not able to declare i inside the for-loop header?
-        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 0);    //turn off blue
-        for (i = 0; i < count; i++)
+
+        int i=0; //TODO: Are we not able to declare i inside the for-loop header?
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 0);    //turn off blue so we can see green blink
+        while ((currentbuffer[i]!='\0')&&(i<40))
         {
             GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, GPIO_PIN_3);    //turn on green
-            UARTprintf("%d [ms]  : %d [ADC Value]\n",
-                       ((printHelper - 40 + 2 * i) * 50), currentbuffer[i]); //print buffer
-            GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, 0);    //turn off green
+            UARTCharPut(UART1_BASE,currentbuffer[i]); //print buffer
+            GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, 0);//turn off green
+            i++;
         }
         GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, GPIO_PIN_2);    //turn on blue
         switchBuffer();  //switch from ping to pong buffer or pong to ping
@@ -223,13 +220,9 @@ void pidTask()  //PID for following right wall. also handles U-TURNS.
 
         if (numThinLines == 2) //after second thin line stop collecting and printing data also set numthinlines to 999 so it wont keep re-enter this if statement. print remai
         {
-            printHelper = pidCycles;
-            int i;
-            for (i = 0; i < printHelper % 40 / 2; i++)
-            {
-                UARTprintf("%d [ms]  : %d [ADC Value]\n",
-                           ((printHelper - (printHelper % 40 / 2) + 2 * i) * 50), currentbuffer[i]); //PRINT ANYTHING REMAINING IN BUFFER SO NO DATA IS LOST
-            }
+
+            Swi_post(swi0);//print remaining buffer
+
             GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 0);       //turn off blue
             GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, 0);       //turn off green
             numThinLines = 999; //do this so it doesn't repeat itself every 10ms
@@ -237,15 +230,19 @@ void pidTask()  //PID for following right wall. also handles U-TURNS.
 
         if ((pidCycles % 2 == 0) && (numThinLines == 1)) //every 100[ms] (every other PID cycle) && after first thin line and before second thin line
         {
-            GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, GPIO_PIN_2);
-            currentbuffer[pidCycles % 40 / 2] = ADCValueError;
-            if ((pidCycles % 40 == 0) && (pidCycles != 0)) //every 40 PID cycles 2[s] we call SWI to print buffer.
-            {
-                printHelper = pidCycles;
-                Swi_post(swi0); //SWI
-            }
+            GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, GPIO_PIN_2);//turn on blue
+            int absError = abs(ADCValueError);
+            int index=0;
+            while(currentbuffer[index]!='\0')index++;//find next empty spot in array and set index.
+
+            currentbuffer[index] = (absError>>8);
+            currentbuffer[index+1] = (absError&0xFF);
+            //UARTCharPut(1,currentbuffer[index]);
+            //UARTCharPut(1,currentbuffer[index+1]);
+            if (currentbuffer[40]!='\0')  Swi_post(swi0); //print buffer when buffer is full 2[s]
+
         }
-        if (numThinLines == 1)
+
             pidCycles++;
     }
 }
