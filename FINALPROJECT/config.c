@@ -1,6 +1,4 @@
-
 // THIS FILE CONTAINS FUNCTIONS THAT CONFIGURE PWM/TIMERS/GPIO/UART/ADC
-
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -33,13 +31,13 @@ PWM_Params params;
 PWMConfig()
 {
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
-        SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM0);
-        GPIOPinConfigure(GPIO_PB6_M0PWM0 );
-        GPIOPinConfigure(GPIO_PB7_M0PWM1);
-        GPIOPinTypePWM(GPIO_PORTB_BASE, GPIO_PIN_6 |GPIO_PIN_7);
-        PWM_init();
-        PWM_Params_init(&params);
-               params.dutyMode = PWM_DUTY_SCALAR;             //sets mode of duty cycle to  0 = 0%duty cycle 65535 = 100% duty cycle
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM0);
+    GPIOPinConfigure(GPIO_PB6_M0PWM0);
+    GPIOPinConfigure(GPIO_PB7_M0PWM1);
+    GPIOPinTypePWM(GPIO_PORTB_BASE, GPIO_PIN_6 | GPIO_PIN_7);
+    PWM_init();
+    PWM_Params_init(&params);
+    params.dutyMode = PWM_DUTY_SCALAR; //sets mode of duty cycle to  0 = 0%duty cycle 65535 = 100% duty cycle
 }
 
 ConfigureUART(void)
@@ -72,37 +70,39 @@ ConfigureUART(void)
     UARTStdioConfig(1, 9600, 16000000);
 }
 
-
-void ConfigureTimer2A()// Timer 2 setup code      this calls PIDTaskHandler every 50 MS
+void ConfigureTimer2A() // Timer 2 setup code      this calls PIDTaskHandler every 50 MS
 {
 
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER2);            // enable Timer 2 periph clks
-    TimerConfigure(TIMER2_BASE, TIMER_CFG_PERIODIC);         // cfg Timer 2 mode - periodic
-    uint32_t ui32Period = (SysCtlClockGet() / 20);           // period = 1/20th of a second AKA 50MS
-    TimerLoadSet(TIMER2_BASE, TIMER_A, ui32Period);          // set Timer 2 period
-    TimerIntEnable(TIMER2_BASE, TIMER_TIMA_TIMEOUT);         // enables Timer 2 to interrupt CPU
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER2);  // enable Timer 2 periph clks
+    TimerConfigure(TIMER2_BASE, TIMER_CFG_PERIODIC); // cfg Timer 2 mode - periodic
+    uint32_t ui32Period = (SysCtlClockGet() / 20); // period = 1/20th of a second AKA 50MS
+    TimerLoadSet(TIMER2_BASE, TIMER_A, ui32Period);        // set Timer 2 period
+    TimerIntEnable(TIMER2_BASE, TIMER_TIMA_TIMEOUT); // enables Timer 2 to interrupt CPU
     TimerEnable(TIMER2_BASE, TIMER_A);                       // enable Timer 2
 }
 
-void ConfigureTimer1A()                              // Timer 1 setup code           10 MS   used for calling blacklineInterrupt
+void ConfigureTimer1A() // Timer 1 setup code           10 MS   used for calling blacklineInterrupt
 {
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER1);    // enable Timer 1 periph clks
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER1);  // enable Timer 1 periph clks
     TimerConfigure(TIMER1_BASE, TIMER_CFG_PERIODIC); // cfg Timer 1 mode - periodic
-    uint32_t ui32Period = (SysCtlClockGet() / 100);  // period = 1/100th of a second AKA 10MS
+    uint32_t ui32Period = (SysCtlClockGet() / 100); // period = 1/100th of a second AKA 10MS
     TimerLoadSet(TIMER1_BASE, TIMER_A, ui32Period);  // set Timer 1 period
 
     TimerIntEnable(TIMER1_BASE, TIMER_TIMA_TIMEOUT); // enables Timer 2 to interrupt CPU
 
     TimerEnable(TIMER1_BASE, TIMER_A);                      // enable Timer 2
 }
-void GPIOConfig(){
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);       // enable port A for left motor polarity, and reflectance sensor
-        GPIOPinTypeGPIOOutput(GPIO_PORTA_BASE, GPIO_PIN_7);//THIS IS USED FOR LEFT MOTOR POLARITY LO=forward HI=reverse
-        SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
-        GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1);//red led
-        GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_2);//blue led
-        GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_3);//green led
+
+void GPIOConfig()
+{
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA); // enable port A for left motor polarity, and reflectance sensor
+    GPIOPinTypeGPIOOutput(GPIO_PORTA_BASE, GPIO_PIN_7); //THIS IS USED FOR LEFT MOTOR POLARITY LO=forward HI=reverse
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1);       //red led
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_2);       //blue led
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_3);       //green led
 }
+
 void ConfigureADC()
 {
     SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
@@ -110,9 +110,11 @@ void ConfigureADC()
     GPIOPinTypeADC(GPIO_PORTE_BASE, GPIO_PIN_3);
     GPIOPinTypeADC(GPIO_PORTE_BASE, GPIO_PIN_2);
     ADCSequenceConfigure(ADC0_BASE, 3, ADC_TRIGGER_PROCESSOR, 0);
-    ADCSequenceStepConfigure(ADC0_BASE, 3, 0, ADC_CTL_CH0 | ADC_CTL_IE | ADC_CTL_END);  //PE3
+    ADCSequenceStepConfigure(ADC0_BASE, 3, 0,
+                             ADC_CTL_CH0 | ADC_CTL_IE | ADC_CTL_END);  //PE3
     ADCSequenceConfigure(ADC0_BASE, 2, ADC_TRIGGER_PROCESSOR, 0);
-    ADCSequenceStepConfigure(ADC0_BASE, 2, 0, ADC_CTL_CH1 | ADC_CTL_IE | ADC_CTL_END);  //PE2
+    ADCSequenceStepConfigure(ADC0_BASE, 2, 0,
+                             ADC_CTL_CH1 | ADC_CTL_IE | ADC_CTL_END);  //PE2
     ADCSequenceEnable(ADC0_BASE, 3);
     ADCSequenceEnable(ADC0_BASE, 2);
     ADCIntClear(ADC0_BASE, 3);

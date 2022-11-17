@@ -135,22 +135,31 @@ int pidCycles = 0;
 int printHelper = 0;
 char ping[40];
 char pong[40];
-char *currentbuffer = ping;
-//char *lastbuffer=pong;
+char *currentBuffer = ping;
+char *lastBuffer = pong;
+int bufferIndex = 0;
+int lastItemIndex = 0;
+
 void switchBuffer()          //toggle ping/pong buffer
 {
-    int i = 0;
-    for (i = 0; i < 40; i++)
-        currentbuffer[i] = '\0';          // clear buffer
-    if (currentbuffer == ping)
+    if (currentBuffer == ping)
     {
-//        lastbuffer=ping;
-        currentbuffer = pong;
+        lastBuffer = ping;
+        currentBuffer = pong;
     }
     else
     {
-//        lastbuffer=pong;
-        currentbuffer = ping;
+        lastBuffer = pong;
+        currentBuffer = ping;
+    }
+    lastItemIndex = bufferIndex - 1;
+    bufferIndex = 0;
+}
+
+void clearLastBuffer() {
+    int i = 0;
+    for (i = 0; i < 40; i++) {
+        lastBuffer[i] = '\0';          // clear buffer
     }
 }
 
@@ -158,27 +167,27 @@ void pingPongSWIHandler()          //CALLED WHEN BUFFER IS FULL
 {
     Semaphore_post(Semaphore2);
 }
+
 void pingPongTask()
 {
-    // int temp = pidCycles;
     while (1)
     {
         Semaphore_pend(Semaphore2, BIOS_WAIT_FOREVER);
-        switchBuffer();  //switch from ping to pong buffer or pong to ping
-        int i = 0; //TODO: Are we not able to declare i inside the for-loop header?
+        UARTprintf("\n<-------------->\n");
+        int i = 0;
         GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 0); //turn off blue so we can see green blink
         GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, GPIO_PIN_3); //turn on green
-        while ((currentBuffer[i] != '\0') && (i < 40))
+        while (i <= lastItemIndex )
         {
-            UARTCharPut(UART1_BASE, currentBuffer[i]); //print buffer
+            UARTCharPut(UART1_BASE, lastBuffer[i]); //print buffer
             i++;
         }
+        clearLastBuffer();
         GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, 0); //turn off green
         if (numThinLines == 1)
         {
             GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, GPIO_PIN_2); //turn on blue
         }
-
     }
 
 }
@@ -193,6 +202,11 @@ void pidTask()  //PID for following right wall. also handles U-TURNS.
         double frontdistance = 14871 * pow(frontdistanceADC, -.995); //convert to cm
         double sidedistance = 14871 * pow(sidedistanceADC, -.995); //convert to cm
         int ADCValueError = sidedistanceADC - 1542;
+
+        if(bufferIndex >= 39) {
+            switchBuffer();
+            Swi_post(swi0);
+        }
 
         if (uturning == 0)
         {
@@ -225,9 +239,10 @@ void pidTask()  //PID for following right wall. also handles U-TURNS.
 
         if (numThinLines == 2) //after second thin line stop collecting and printing data also set numthinlines to 999 so it wont keep re-enter this if statement. print remai
         {
-            Swi_post(swi0); //print remaining buffer
             GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 0);       //turn off blue
             GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, 0);       //turn off green
+            switchBuffer();
+            Swi_post(swi0); //print remaining buffer
             numThinLines = 999; //do this so it doesn't repeat itself every 10ms
         }
 
@@ -235,18 +250,14 @@ void pidTask()  //PID for following right wall. also handles U-TURNS.
         {
             GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, GPIO_PIN_2); //turn on blue
             int absError = abs(ADCValueError);
-            int index = 0;
-            while (currentbuffer[index] != '\0') {
-                index++; //find next empty spot in array and set index.
+            if (bufferIndex <= 38)
+            {
+                currentBuffer[bufferIndex] = (absError >> 8);
+                currentBuffer[bufferIndex + 1] = (absError & 0xFF);
+                bufferIndex += 2;
             }
-
-            currentbuffer[index] = (absError >> 8);
-            currentbuffer[index + 1] = (absError & 0xFF);
             //UARTCharPut(1,currentbuffer[index]);
             //UARTCharPut(1,currentbuffer[index+1]);
-            if (currentbuffer[39] != '\0') {
-                Swi_post(swi0); //print buffer when buffer is full 2[s]
-            }
         }
         pidCycles++;
     }
