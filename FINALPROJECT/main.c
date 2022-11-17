@@ -173,7 +173,6 @@ void pingPongTask()
     while (1)
     {
         Semaphore_pend(Semaphore2, BIOS_WAIT_FOREVER);
-        UARTprintf("\n<-------------->\n");
         int i = 0;
         GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 0); //turn off blue so we can see green blink
         GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, GPIO_PIN_3); //turn on green
@@ -311,8 +310,8 @@ void blacklineTask()    //detects if robot drives over thin or thick black line.
         }
         if (cycles > 20)    //IF MORE THAN 15 CYCLES IT MUST BE THICC
         {
-//            UARTprintf("Large strip hit numCycles:%d\n", cycles);
-//            UARTprintf("Total Run Time: %d seconds\n", counter / 100);
+            UARTprintf("Large strip hit numCycles: %d\n", cycles);
+            UARTprintf("Total Run Time: %d seconds\n", counter / 100);
             leftmotorstop();
             rightmotorstop();
             BIOS_exit(0);
