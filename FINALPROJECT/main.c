@@ -73,13 +73,13 @@ int findDistanceSide()  // return distance from side sensor as ADC VALUE
 void leftmotorstop()   // this function turns duty cycle to zero
 {
     PWM_setDuty(motor1, 0);
-    UARTprintf("Left Motor Stop\n");
+//    UARTprintf("Left Motor Stop\n");
 }
 
 void leftmotorstart() //enables PWM with a 0% duty cycle. you must call leftmotorfast or leftmotorslow to actually get the motor going.
 {
     motor1 = PWM_open(Board_PWM0, &params);   //PWM0= PB6
-    UARTprintf("Left Motor Start \n");
+//    UARTprintf("Left Motor Start \n");
 }
 
 void leftmotorcustomspeed(double speed) //sets motor speed 0-99.99999 via PWM duty cycle
@@ -97,13 +97,13 @@ void rightmotorcustomspeed(double speed) //sets motor speed 0-99.99999 via PWM d
 void rightmotorstop()   //This function sets duty cycle to zero
 {
     PWM_setDuty(motor2, 0);
-    UARTprintf("Right Motor Stop\n");
+//    UARTprintf("Right Motor Stop\n");
 }
 
 void rightmotorstart() //enables PWM with a 0% duty cycle. you must call rightmotorfast or rightmotorslow to actually get the motor going.
 {
     motor2 = PWM_open(Board_PWM1, &params);   //PWM1= PB7
-    UARTprintf("Right Motor Start\n");
+//    UARTprintf("Right Motor Start\n");
 }
 
 void PIDInterruptHandler()   // called every 50 ms
@@ -124,7 +124,8 @@ void UTURN()
         GPIOPinWrite(GPIO_PORTA_BASE, GPIO_PIN_7, GPIO_PIN_7); //SET LEFT MOTOR TO REVERSE
         leftmotorcustomspeed(99);                          //U-TURN AT MAX SPEED
         rightmotorcustomspeed(99);                         //U-TURN AT MAX SPEED
-        while (14871 * pow(findDistanceFront(), -.995) < 16);  //turn until front distance >16 cm
+        while (14871 * pow(findDistanceFront(), -.995) < 16)
+            ;  //turn until front distance >16 cm
         GPIOPinWrite(GPIO_PORTA_BASE, GPIO_PIN_7, 0); //set motor back to forward
         uturning = 0;
     }
@@ -135,17 +136,20 @@ int printHelper = 0;
 char ping[40];
 char pong[40];
 char *currentbuffer = ping;
-
+char *lastbuffer=pong;
 void switchBuffer()          //toggle ping/pong buffer
 {
-    int i=0;
-    for(i=0;i<40;i++)currentbuffer[i]='\0';// clear buffer
+    int i = 0;
+    for (i = 0; i < 40; i++)
+        currentbuffer[i] = '\0';          // clear buffer
     if (currentbuffer == ping)
     {
+        lastbuffer=ping;
         currentbuffer = pong;
     }
     else
     {
+        lastbuffer=pong;
         currentbuffer = ping;
     }
 }
@@ -160,22 +164,24 @@ void pingPongTask()
     while (1)
     {
         Semaphore_pend(Semaphore2, BIOS_WAIT_FOREVER);
-
-        int i=0; //TODO: Are we not able to declare i inside the for-loop header?
-        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 0);    //turn off blue so we can see green blink
-        while ((currentbuffer[i]!='\0')&&(i<40))
+        switchBuffer();  //switch from ping to pong buffer or pong to ping
+        int i = 0; //TODO: Are we not able to declare i inside the for-loop header?
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 0); //turn off blue so we can see green blink
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, GPIO_PIN_3); //turn on green
+        while ((lastbuffer[i] != '\0') && (i < 40))
         {
-            GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, GPIO_PIN_3);    //turn on green
-            UARTCharPut(UART1_BASE,currentbuffer[i]); //print buffer
-            GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, 0);//turn off green
+            UARTCharPut(UART1_BASE, lastbuffer[i]); //print buffer
             i++;
         }
-        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, GPIO_PIN_2);    //turn on blue
-        switchBuffer();  //switch from ping to pong buffer or pong to ping
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, 0); //turn off green
+        if (numThinLines == 1)
+        {
+            GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, GPIO_PIN_2); //turn on blue
+        }
+
     }
 
 }
-
 
 void pidTask()  //PID for following right wall. also handles U-TURNS.
 {
@@ -211,18 +217,15 @@ void pidTask()  //PID for following right wall. also handles U-TURNS.
             LastError = Error;  //Set LastError  for I AND D CALCULATIONS
         }
 
-
-
-        if (frontdistance < 8) {
+        if (frontdistance < 8)
+        {
             uturning = 1;
             Semaphore_post(Semaphore3);    //IF FRONTDISTANCE <8 cm U TURN
         }
 
         if (numThinLines == 2) //after second thin line stop collecting and printing data also set numthinlines to 999 so it wont keep re-enter this if statement. print remai
         {
-
-            Swi_post(swi0);//print remaining buffer
-
+            Swi_post(swi0); //print remaining buffer
             GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 0);       //turn off blue
             GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, 0);       //turn off green
             numThinLines = 999; //do this so it doesn't repeat itself every 10ms
@@ -230,20 +233,22 @@ void pidTask()  //PID for following right wall. also handles U-TURNS.
 
         if ((pidCycles % 2 == 0) && (numThinLines == 1)) //every 100[ms] (every other PID cycle) && after first thin line and before second thin line
         {
-            GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, GPIO_PIN_2);//turn on blue
+            GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, GPIO_PIN_2); //turn on blue
             int absError = abs(ADCValueError);
-            int index=0;
-            while(currentbuffer[index]!='\0')index++;//find next empty spot in array and set index.
+            int index = 0;
+            while (currentbuffer[index] != '\0') {
+                index++; //find next empty spot in array and set index.
+            }
 
-            currentbuffer[index] = (absError>>8);
-            currentbuffer[index+1] = (absError&0xFF);
+            currentbuffer[index] = (absError >> 8);
+            currentbuffer[index + 1] = (absError & 0xFF);
             //UARTCharPut(1,currentbuffer[index]);
             //UARTCharPut(1,currentbuffer[index+1]);
-            if (currentbuffer[40]!='\0')  Swi_post(swi0); //print buffer when buffer is full 2[s]
-
+            if (currentbuffer[39] != '\0') {
+                Swi_post(swi0); //print buffer when buffer is full 2[s]
+            }
         }
-
-            pidCycles++;
+        pidCycles++;
     }
 }
 
@@ -287,15 +292,16 @@ void blacklineTask()    //detects if robot drives over thin or thick black line.
     {
         Semaphore_pend(Semaphore1, BIOS_WAIT_FOREVER); //task unblocked every 10 [ms] by timer
         int cycles = 0;
-        while ((currentreflectance = reflectance() == 1) || (lastreflectance == 1)) //WHILE SENSOR READING BLACK. allows one cycle of white incase of error in reading. sometimes the sensor would read one white in the middle of a black line and mess everything up. so this disregards one white reading in the middle of a black line.
+        while ((currentreflectance = reflectance() == 1)
+                || (lastreflectance == 1)) //WHILE SENSOR READING BLACK. allows one cycle of white incase of error in reading. sometimes the sensor would read one white in the middle of a black line and mess everything up. so this disregards one white reading in the middle of a black line.
         {
             cycles++;
             lastreflectance = currentreflectance;
         }
         if (cycles > 20)    //IF MORE THAN 15 CYCLES IT MUST BE THICC
         {
-            UARTprintf("Large strip hit numCycles:%d\n", cycles);
-            UARTprintf("Total Run Time: %d seconds\n", counter / 100);
+//            UARTprintf("Large strip hit numCycles:%d\n", cycles);
+//            UARTprintf("Total Run Time: %d seconds\n", counter / 100);
             leftmotorstop();
             rightmotorstop();
             BIOS_exit(0);
@@ -303,8 +309,7 @@ void blacklineTask()    //detects if robot drives over thin or thick black line.
         if ((cycles > 3) && (cycles < 20)) //IF LESS THAN 22 cycles must be thin line
         {
             numThinLines++;
-            UARTprintf("Thin line #%d hit   numCycles:%d \n", numThinLines,
-                       cycles);
+//            UARTprintf("Thin line #%d hit   numCycles:%d \n", numThinLines, cycles);
         }
     }
 }
@@ -314,17 +319,17 @@ int main(void)
     SysCtlClockSet(
     SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_XTAL_16MHZ | SYSCTL_OSC_MAIN); //   LeftMotorPolarity: PA7
     PWMConfig();
-    GPIOConfig(); //                                                    LeftMotor        : PB6     RightMotor: PB7
-    ConfigureUART(); // Configure UART for BT                              RX               : PC4     TX        : PC5
-    ConfigureADC(); // Configure ADC for distance sensors                 FrontSensor      : PE3     SideSensor: PE2
+    GPIOConfig(); //                                                        LeftMotor        : PB6     RightMotor: PB7
+    ConfigureUART(); // Configure UART for BT                               RX               : PC4     TX        : PC5
+    ConfigureADC(); // Configure ADC for distance sensors                   FrontSensor      : PE3     SideSensor: PE2
     ConfigureTimer2A();     // 50ms timer for pid
     ConfigureTimer1A();     // 10ms timer for blackline
-    UARTprintf("Hello World!\n");
+//    UARTprintf("Hello World!\n");
     LastError = findDistanceSide() - 10;       //Get initial Error for PID calc.
     leftmotorstart();               //Configures left motor. starts with 0% duty
     rightmotorstart();            // Configures right motor. starts with 0% duty
     BIOS_start();
-    //UARTprintf("Total Run Time: %d seconds\n",counter/20);
-    //UARTDisable(UART0_BASE);
+//    UARTprintf("Total Run Time: %d seconds\n",counter/20);
+//    UARTDisable(UART0_BASE);
 }
 
