@@ -136,7 +136,7 @@ int printHelper = 0;
 char ping[40];
 char pong[40];
 char *currentbuffer = ping;
-char *lastbuffer=pong;
+//char *lastbuffer=pong;
 void switchBuffer()          //toggle ping/pong buffer
 {
     int i = 0;
@@ -144,12 +144,12 @@ void switchBuffer()          //toggle ping/pong buffer
         currentbuffer[i] = '\0';          // clear buffer
     if (currentbuffer == ping)
     {
-        lastbuffer=ping;
+//        lastbuffer=ping;
         currentbuffer = pong;
     }
     else
     {
-        lastbuffer=pong;
+//        lastbuffer=pong;
         currentbuffer = ping;
     }
 }
@@ -168,9 +168,9 @@ void pingPongTask()
         int i = 0; //TODO: Are we not able to declare i inside the for-loop header?
         GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 0); //turn off blue so we can see green blink
         GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, GPIO_PIN_3); //turn on green
-        while ((lastbuffer[i] != '\0') && (i < 40))
+        while ((currentBuffer[i] != '\0') && (i < 40))
         {
-            UARTCharPut(UART1_BASE, lastbuffer[i]); //print buffer
+            UARTCharPut(UART1_BASE, currentBuffer[i]); //print buffer
             i++;
         }
         GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, 0); //turn off green
