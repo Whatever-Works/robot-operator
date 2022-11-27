@@ -1,4 +1,4 @@
-//These Functions are only used in debug mode so we hide them here
+// These functions are only used in debug mode so we hide them here
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -43,87 +43,87 @@ struct lut
     void (*func)(void);
 };
 
-
+// Prints both current distance front and side values in [cm].
 void printDistance()
 {
     int i = 0;
     for (i = 0; i < 15; i++)
     {
-
         UARTprintf("Distance Front[cm] = %d  Distance Side[cm] = %d      \r", 14871 * pow(findDistanceFront(), -.995), 14871 * pow(findDistanceSide(), -.995));// print as int... for some reason printing a double on bluetooth gives error.
         SysCtlDelay(SysCtlClockGet() / 6);
     }
     UARTprintf("\n");
-
 }
-void getstring1(char uartstring[])        //used to grab a 2 character string from UART
+
+void getUARTString(char UARTString[])        // used to grab a 2 character string from UART
 {
-
-    uartstring[0] = UARTCharGet(UART1_BASE); //UART0 = USB               UART1 = BLUETOOTH
-    uartstring[1] = UARTCharGet(UART1_BASE);
-
+    UARTString[0] = UARTCharGet(UART1_BASE); // UART0 = USB | UART1 = BLUETOOTH
+    UARTString[1] = UARTCharGet(UART1_BASE);
 }
-
 
 void leftmotorfast() // this function sets PWM to 100% duty cycle
 {
     PWM_setDuty(motor1, 65535);
     UARTprintf("Left Motor Fast\n");
 }
-void leftmotorslow()// this function sets PWM to 33% duty cycle
+
+void leftmotorslow() // this function sets PWM to 33% duty cycle
 {
     PWM_setDuty(motor1, 65535 / 3);
     UARTprintf("Left Motor Slow\n");
 }
-void rightmotorfast()// this function sets PWM to 100% duty cycle
+
+void rightmotorfast() // this function sets PWM to 100% duty cycle
 {
     PWM_setDuty(motor2, 65535);
     UARTprintf("Right Motor Fast\n");
 }
-void setCustomSpeedBothMotors()// ask user to enter speed for both motors over UART
+
+void setCustomSpeedBothMotors() // ask user to enter speed for both motors over UART
 {
     char mystring[3];
     UARTprintf("Enter speed 0-99\n");
-    getstring1(mystring);
+    getUARTString(mystring);
     int percentage = ((int) mystring[0] - 48) * 10 + ((int) mystring[1] - 48); //convert 2 char string to an integer
     UARTprintf("both motors set to %d percent\n", percentage);
     leftmotorcustomspeed((double) percentage);
     rightmotorcustomspeed((double) percentage);
 
 }
-void rightmotorslow()// this function sets PWM to 33% duty cycle
+
+void rightmotorslow() // this function sets PWM to 33% duty cycle
 {
     PWM_setDuty(motor2, 65535 / 3);
     UARTprintf("Right Motor Slow\n");
 }
 
+// Lookup table used for user inputted commands
 struct lut LUT[25] = {
-                       {"bc", setCustomSpeedBothMotors},
-                       {"ls", leftmotorstart},
-                       {"lf", leftmotorfast},
-                       {"sl", leftmotorslow},
-                       {"el", leftmotorstop},
-                       {"rs", rightmotorstart},
-                       {"rf", rightmotorfast},
-                       {"sr", rightmotorslow},
-                       {"er", rightmotorstop},
-                       {"pd", printDistance}
-                     };
+{"bc", setCustomSpeedBothMotors},
+{"ls", leftmotorstart},
+{"lf", leftmotorfast},
+{"sl", leftmotorslow},
+{"el", leftmotorstop},
+{"rs", rightmotorstart},
+{"rf", rightmotorfast},
+{"sr", rightmotorslow},
+{"er", rightmotorstop},
+{"pd", printDistance}
+};
 
-void btUART()    //asks users for 2 char function from lookup table. only used for debugging. not used in final.
+void btUART() // asks users for 2 char function from lookup table. only used for debugging. not used in final.
 {
-    char uartstring[3] = "";
+    char UARTString[3] = "";
     int i = 0;
     void (*fun)(void);
 
     while (1)
     {
-
-        getstring1(uartstring); //pulls 2 character string from UART
-        UARTprintf("your input: %s\n", uartstring);
+        getUARTString(UARTString); //pulls 2 character string from UART
+        UARTprintf("your input: %s\n", UARTString);
         for (i = 0; i < 25; i++)
         {
-            if (strcmp(uartstring, LUT[i].funname) == 0) //IF UART STRING ==  Function abbreviation. then set function pointer to respective function.
+            if (strcmp(UARTString, LUT[i].funname) == 0) //If UARTString == Function abbreviation, then set function pointer to the corresponding function.
             {
                 fun = LUT[i].func;
                 fun();
@@ -132,6 +132,5 @@ void btUART()    //asks users for 2 char function from lookup table. only used f
 
         }
         if (i == 25) UARTprintf("Invalid input!\n");
-
     }
 }

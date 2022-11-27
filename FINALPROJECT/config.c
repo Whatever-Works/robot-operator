@@ -55,7 +55,7 @@ ConfigureUART(void)
     //
     // Configure GPIO Pins for UART mode.
     //
-    GPIOPinConfigure(GPIO_PC4_U1RX);                               //PC4RX PC5TX
+    GPIOPinConfigure(GPIO_PC4_U1RX);  //PC4RX PC5TX
     GPIOPinConfigure(GPIO_PC5_U1TX);
     GPIOPinTypeUART(GPIO_PORTC_BASE, GPIO_PIN_4 | GPIO_PIN_5);
 
@@ -70,7 +70,7 @@ ConfigureUART(void)
     UARTStdioConfig(1, 9600, 16000000);
 }
 
-void ConfigureTimer2A() // Timer 2 setup code      this calls PIDTaskHandler every 50 MS
+void ConfigureTimer2A() // Timer 2A setup code. This calls PIDTaskHandler every 50 [ms]
 {
 
     SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER2);  // enable Timer 2 periph clks
@@ -81,28 +81,27 @@ void ConfigureTimer2A() // Timer 2 setup code      this calls PIDTaskHandler eve
     TimerEnable(TIMER2_BASE, TIMER_A);                       // enable Timer 2
 }
 
-void ConfigureTimer1A() // Timer 1 setup code           10 MS   used for calling blacklineInterrupt
+void ConfigureTimer1A() // Timer 1A setup code. 10 [ms] used for calling blackline interrupt
 {
     SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER1);  // enable Timer 1 periph clks
     TimerConfigure(TIMER1_BASE, TIMER_CFG_PERIODIC); // cfg Timer 1 mode - periodic
     uint32_t ui32Period = (SysCtlClockGet() / 100); // period = 1/100th of a second AKA 10MS
     TimerLoadSet(TIMER1_BASE, TIMER_A, ui32Period);  // set Timer 1 period
-
     TimerIntEnable(TIMER1_BASE, TIMER_TIMA_TIMEOUT); // enables Timer 2 to interrupt CPU
-
-    TimerEnable(TIMER1_BASE, TIMER_A);                      // enable Timer 2
+    TimerEnable(TIMER1_BASE, TIMER_A); // enable Timer 2
 }
 
 void GPIOConfig()
 {
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA); // enable port A for left motor polarity, and reflectance sensor
-    GPIOPinTypeGPIOOutput(GPIO_PORTA_BASE, GPIO_PIN_7); //THIS IS USED FOR LEFT MOTOR POLARITY LO=forward HI=reverse
+    GPIOPinTypeGPIOOutput(GPIO_PORTA_BASE, GPIO_PIN_7); // This is used to control left motor directional polarity. LO=forward HI=reverse
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
     GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1);       //red led
     GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_2);       //blue led
     GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_3);       //green led
 }
 
+// Configures ADC usage for PE3 and PE2
 void ConfigureADC()
 {
     SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
@@ -110,11 +109,9 @@ void ConfigureADC()
     GPIOPinTypeADC(GPIO_PORTE_BASE, GPIO_PIN_3);
     GPIOPinTypeADC(GPIO_PORTE_BASE, GPIO_PIN_2);
     ADCSequenceConfigure(ADC0_BASE, 3, ADC_TRIGGER_PROCESSOR, 0);
-    ADCSequenceStepConfigure(ADC0_BASE, 3, 0,
-                             ADC_CTL_CH0 | ADC_CTL_IE | ADC_CTL_END);  //PE3
+    ADCSequenceStepConfigure(ADC0_BASE, 3, 0, ADC_CTL_CH0 | ADC_CTL_IE | ADC_CTL_END);  //PE3
     ADCSequenceConfigure(ADC0_BASE, 2, ADC_TRIGGER_PROCESSOR, 0);
-    ADCSequenceStepConfigure(ADC0_BASE, 2, 0,
-                             ADC_CTL_CH1 | ADC_CTL_IE | ADC_CTL_END);  //PE2
+    ADCSequenceStepConfigure(ADC0_BASE, 2, 0, ADC_CTL_CH1 | ADC_CTL_IE | ADC_CTL_END);  //PE2
     ADCSequenceEnable(ADC0_BASE, 3);
     ADCSequenceEnable(ADC0_BASE, 2);
     ADCIntClear(ADC0_BASE, 3);
